@@ -17,13 +17,13 @@
             <div class="grid">
                 <div class="event-details">
                     <div class="form-group animate-in">
-                        <label>Event Title</label>
+                        <label for="eventTitle">Event Title</label>
                         <input type="text" id="eventTitle" class="input" placeholder="Give your event a catchy name">
                     </div>
 
                     <div class="form-row">
                         <div class="form-group animate-in" style="--delay: 0.1s">
-                            <label>Date</label>
+                            <label for="eventDate">Date</label>
                             <div class="input-icon">
                                 <i class="icon">📅</i>
                                 <input type="date" id="eventDate" class="input">
@@ -31,7 +31,7 @@
                         </div>
 
                         <div class="form-group animate-in" style="--delay: 0.2s">
-                            <label>Time</label>
+                            <label for="eventTime">Time</label>
                             <div class="input-icon">
                                 <i class="icon">⏰</i>
                                 <input type="time" id="eventTime" class="input">
@@ -40,7 +40,7 @@
                     </div>
 
                     <div class="form-group animate-in" style="--delay: 0.3s">
-                        <label>Description</label>
+                        <label for="eventDescription">Description</label>
                         <textarea id="eventDescription" class="input" rows="3" placeholder="Tell us about your event..."></textarea>
                     </div>
 
@@ -62,7 +62,7 @@
                 
                     <div class="filters">
                         <div class="filter-group">
-                            <label>Minimum Rating</label>
+                            <label for="ratingFilter">Minimum Rating</label>
                             <select id="ratingFilter" class="input">
                                 <option value="0">Any Rating</option>
                                 <option value="3">3+ Stars</option>
@@ -72,7 +72,7 @@
                         </div>
                 
                         <div class="filter-group">
-                            <label>Max Distance</label>
+                            <label for="distanceFilter">Max Distance</label>
                             <select id="distanceFilter" class="input">
                                 <option value="5000">5 km</option>
                                 <option value="10000" selected>10 km</option>
@@ -82,7 +82,7 @@
                         </div>
                 
                         <div class="filter-group">
-                            <label>Price Level</label>
+                            <label for="priceFilter">Price Level</label>
                             <select id="priceFilter" class="input">
                                 <option value="">Any Price</option>
                                 <option value="1">$</option>
@@ -104,7 +104,7 @@
 
             <div class="actions animate-in" style="--delay: 0.7s">
                 <button id="authorize_button" onclick="handleAuthClick()" class="button primary" >
-                    <i class="icon">📅 Create Calendar Event</i>
+                    <i class="icon" id="create_event_button">📅Create Event</i>
                 </button>
                 
             </div>
