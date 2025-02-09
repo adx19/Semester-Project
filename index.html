@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan Out - Event Planning Made Fun</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Plan Out</h1>
+            <p class="subtitle">Create Unforgettable Events</p>
+        </div>
+        <div class="card">
+            <div class="grid">
+                <div class="event-details">
+                    <div class="form-group animate-in">
+                        <label>Event Title</label>
+                        <input type="text" id="eventTitle" class="input" placeholder="Give your event a catchy name">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group animate-in" style="--delay: 0.1s">
+                            <label>Date</label>
+                            <div class="input-icon">
+                                <i class="icon">📅</i>
+                                <input type="date" id="eventDate" class="input">
+                            </div>
+                        </div>
+
+                        <div class="form-group animate-in" style="--delay: 0.2s">
+                            <label>Time</label>
+                            <div class="input-icon">
+                                <i class="icon">⏰</i>
+                                <input type="time" id="eventTime" class="input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group animate-in" style="--delay: 0.3s">
+                        <label>Description</label>
+                        <textarea id="eventDescription" class="input" rows="3" placeholder="Tell us about your event..."></textarea>
+                    </div>
+
+                    <div class="attendees-section animate-in" style="--delay: 0.4s">
+                        <h2><i class="icon">👥</i> Attendees</h2>
+                        <div class="attendee-form">
+                            <input type="text" id="attendeeName" placeholder="Name" class="input">
+                            <input type="email" id="attendeeEmail" placeholder="Email" class="input">
+                            <button onclick="addAttendee()" class="button pulse">Add</button>
+                        </div>
+                        <div id="attendeesList" class="attendees-list"></div>
+                    </div>
+
+                    <div id="itineraryContainer" class="itinerary-section animate-in" style="--delay: 0.5s"></div>
+                </div>
+
+                <div class="venues-section animate-in" style="--delay: 0.6s">
+                    <h2><i class="icon">📍</i> Venue Selection</h2>
+                
+                    <div class="filters">
+                        <div class="filter-group">
+                            <label>Minimum Rating</label>
+                            <select id="ratingFilter" class="input">
+                                <option value="0">Any Rating</option>
+                                <option value="3">3+ Stars</option>
+                                <option value="4">4+ Stars</option>
+                                <option value="4.5">4.5+ Stars</option>
+                            </select>
+                        </div>
+                
+                        <div class="filter-group">
+                            <label>Max Distance</label>
+                            <select id="distanceFilter" class="input">
+                                <option value="5000">5 km</option>
+                                <option value="10000" selected>10 km</option>
+                                <option value="20000">20 km</option>
+                                <option value="50000">50 km</option>
+                            </select>
+                        </div>
+                
+                        <div class="filter-group">
+                            <label>Price Level</label>
+                            <select id="priceFilter" class="input">
+                                <option value="">Any Price</option>
+                                <option value="1">$</option>
+                                <option value="2">$$</option>
+                                <option value="3">$$$</option>
+                                <option value="4">$$$$</option>
+                            </select>
+                        </div>
+                    </div>
+                
+                    <div class="venue-actions">
+                        <!-- Add buttons or actions for venue selection here -->
+                    </div>
+                
+                    <div id="venuesList" class="venue-list"></div>
+                </div>
+                
+            </div>
+
+            <div class="actions animate-in" style="--delay: 0.7s">
+                <button id="authorize_button" onclick="handleAuthClick()" class="button primary" >
+                    <i class="icon">📅 Create Calendar Event</i>
+                </button>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- Add the script files -->
+    <script src="script.js"></script>
+    <script src="calender.js"></script>
+    <script src="venues.js"></script>
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+
+</body>
+</html>
