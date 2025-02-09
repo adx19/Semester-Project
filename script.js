@@ -163,3 +163,546 @@ let state = {
 
     itineraryContainer.innerHTML = itineraryHTML;
 }
+function handleAuthClick() {
+  gapi.auth2.getAuthInstance().signIn().then(function() {
+    console.log("User signed in");
+    // Do something after sign-in
+  }).catch(function(error) {
+    console.error("Error signing in: ", error);
+  });
+}
+
+
+// Example function to fetch events from Google Calendar
+function fetchCalendarEvents() {
+  const calendar = gapi.client.calendar.events.list({
+      calendarId: 'primary', // or use specific calendar ID
+      timeMin: (new Date()).toISOString(),
+      maxResults: 10,
+      singleEvents: true,
+      orderBy: 'startTime',
+  });
+
+  calendar.execute(function (response) {
+      console.log(response);
+      // Handle the response and display events
+  });
+}
+
+// Load the Google API client library and authorize the user
+function gapiLoaded() {
+  gapi.load('client:auth2', initClient);
+}
+
+// Initialize the Google API client
+function initClient() {
+  gapi.client.init({
+      apiKey: 'AIzaSyDMmN5TG0hagBdemDfnlr70QDDjVwgclPI', // Replace with your actual API key
+      clientId: '486635642141-jvn5o191ua23vj8arf16ms6hkjddcit8.apps.googleusercontent.com', // Replace with your actual Client ID
+      discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
+      scope: 'https://www.googleapis.com/auth/calendar.readonly',
+  }).then(function () {
+      console.log('Google API client initialized');
+      
+      // Make sure we can now access the auth instance
+      const authInstance = gapi.auth2.getAuthInstance();
+      if (authInstance.isSignedIn.get()) {
+          console.log('User is already signed in');
+      } else {
+          console.log('User is not signed in');
+      }
+  }).catch(function (error) {
+      console.log('Error initializing Google API client: ', error);
+  });
+}
+
+// This function can be used to handle the Google Identity Services API if needed
+function gisLoaded() {
+  console.log("Google Identity Services API loaded");
+}
+// venues.js
+
+// Foursquare API Configuration
+const FOURSQUARE_API_KEY = 'fsq3iQJuwQqIJYLMqpTXfSl6EFqgNRs/T8ikN3M1pxywXX0='; // Replace with actual API key
+const FOURSQUARE_BASE_URL = 'https://api.foursquare.com/v3';
+
+// Venue search with Foursquare API
+async function getCurrentPosition() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error("Geolocation is not supported by this browser."));
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => resolve(position),
+            (error) => reject(new Error("Error retrieving location: " + error.message))
+        );
+    });
+}
+
+// Venue search with Foursquare API
+async function searchVenues() {
+  try {
+      // Get Filter Values from the UI
+      const { ratingFilter, distanceFilter, priceFilter } = getFilterValues();
+      
+      // Log filter values to verify they're set as expected
+      console.log(`Rating filter: ${ratingFilter}, Distance filter: ${distanceFilter}, Price filter: ${priceFilter}`);
+
+      // Get User Location
+      const position = await getCurrentPosition();
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+
+      const maxDistance = distanceFilter;
+
+      const params = new URLSearchParams({
+          ll: `${latitude},${longitude}`,
+          radius: maxDistance,
+          categories: '13003,13065', // Venue, event space categories
+          sort: 'RATING',
+          limit: 10
+      });
+
+      const response = await fetch(`${FOURSQUARE_BASE_URL}/places/search?${params}`, {
+          headers: {
+              'Authorization': FOURSQUARE_API_KEY,
+              'Accept': 'application/json'
+          }
+      });
+
+      const data = await response.json();
+
+      if (!data.results || !Array.isArray(data.results)) {
+          throw new Error("Invalid API response format.");
+      }
+
+      // Fetch Venue Details for Each Venue
+      const venueDetailsPromises = data.results.map(async (venue) => {
+          try {
+              const detailsResponse = await fetch(`${FOURSQUARE_BASE_URL}/places/${venue.fsq_id}?fields=rating,price`, {
+                  headers: {
+                      'Authorization': FOURSQUARE_API_KEY,
+                      'Accept': 'application/json'
+                  }
+              });
+
+              const details = await detailsResponse.json();
+              
+              return {
+                  ...venue,
+                  rating: details.rating !== undefined ? details.rating : null,
+                  price: details.price !== undefined ? details.price : null
+              };
+          } catch (error) {
+              console.error(`Error fetching details for venue ${venue.fsq_id}:`, error);
+              return venue;
+          }
+      });
+
+      state.venues = await Promise.all(venueDetailsPromises);
+
+      // Log raw venue data (for debugging)
+      console.log("Raw venues data:", state.venues);
+
+      // Apply filters to the venues
+      const filteredVenues = state.venues.filter((venue) => {
+          const ratingValid = venue.rating >= ratingFilter;
+          const priceValid = priceFilter ? venue.price === priceFilter : true;
+          const distanceValid = venue.distance <= distanceFilter;
+
+          // Log each venue's filter validation for debugging
+          console.log(`Venue ${venue.fsq_id} rating: ${venue.rating}, price: ${venue.price}, distance: ${venue.distance}`);
+          console.log(`Rating valid: ${ratingValid}, Price valid: ${priceValid}, Distance valid: ${distanceValid}`);
+
+          return ratingValid && priceValid && distanceValid;
+      });
+
+      // Log the filtered venues
+      console.log("Filtered venues:", filteredVenues);
+
+      // Simplify the sorting logic first to focus on rating only
+      filteredVenues.sort((a, b) => {
+          const ratingA = a.rating !== null && a.rating !== undefined ? parseFloat(a.rating) : 0;
+          const ratingB = b.rating !== null && b.rating !== undefined ? parseFloat(b.rating) : 0;
+
+          console.log(`Sorting ratings: ${ratingA} vs ${ratingB}`);  // Log the ratings comparison
+
+          return ratingB - ratingA;  // Sort by rating (descending)
+      });
+
+      // Log the sorted venues to ensure proper sorting
+      console.log("Sorted venues:", filteredVenues);
+
+      // Render the filtered and sorted venues
+      renderVenues(filteredVenues);
+
+  } catch (error) {
+      console.error('Error searching venues:', error);
+      showNotification('Error searching venues. Please try again.', 'error');
+  }
+}
+
+// Render the venues to the page
+// Render the filtered venues to the page
+function renderVenues(venues) {
+  const list = document.getElementById('venuesList');
+  if (!list) return;
+
+  if (venues.length === 0) {
+      list.innerHTML = '<p>No venues found matching the filters.</p>';
+  } else {
+      list.innerHTML = venues.map(venue => {
+          const imageUrl = venue.photos?.[0] 
+              ? `${venue.photos[0].prefix}original${venue.photos[0].suffix}` 
+              : 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80';
+
+          const rawRating = typeof venue.rating === 'number' ? venue.rating : null;
+          const convertedRating = rawRating !== null ? (rawRating / 2).toFixed(1) : 'N/A';
+
+          const stars = rawRating !== null ? '★'.repeat(Math.round(rawRating / 2)) : 'No rating';
+          const price = venue.price ? '$'.repeat(venue.price) : 'Unknown';
+
+          return `
+              <div class="venue-card ${venue.fsq_id === state.event.venue?.fsq_id ? 'selected' : ''}"
+              onclick="selectVenue('${venue.fsq_id}')">
+
+                  <img src="${imageUrl}" alt="${venue.name}" class="venue-image">
+                  <div class="venue-info">
+                      <h3 class="venue-name">${venue.name}</h3>
+                      <p class="venue-address">${venue.location.formatted_address || 'Address not available'}</p>
+                      <div class="venue-rating">
+                          <span class="stars">${stars}</span>
+                          <span class="rating-number">${convertedRating} / 5</span>
+                          <span class="price-level">${price}</span>
+                      </div>
+                  </div>
+              </div>
+          `;
+      }).join('');
+  }
+}
+
+
+// Select a venue from the list
+function selectVenue(fsqId) {
+    const selectedVenue = state.venues.find(venue => venue.fsq_id === fsqId);
+    if (selectedVenue) {
+        state.event.venue = selectedVenue;
+        renderVenues();
+}}
+
+// Make searchVenues globally accessible for external scripts
+window.searchVenues = searchVenues;
+
+// Optionally add a gisLoaded callback function for when the Google Maps API loads
+function gisLoaded() {
+    console.log("Google Maps API loaded successfully!");
+    searchVenues(); // Call the searchVenues function once the API is loaded
+}
+// venues.js
+
+// Function to get selected filter values
+// Function to get selected filter values
+function getFilterValues() {
+  const ratingFilter = parseFloat(document.getElementById('ratingFilter').value);
+  const distanceFilter = parseInt(document.getElementById('distanceFilter').value);
+  const priceFilter = parseInt(document.getElementById('priceFilter').value) || null;
+
+  // Log the filter values to verify
+  console.log(`Rating: ${ratingFilter}, Distance: ${distanceFilter}, Price: ${priceFilter}`);
+  
+  return {
+      ratingFilter,
+      distanceFilter,
+      priceFilter
+  };
+}
+
+
+// Venue search with Foursquare API
+async function searchVenues() {
+  try {
+      // Get Filter Values from the UI
+      const { ratingFilter, distanceFilter, priceFilter } = getFilterValues();
+      
+      // Log filter values to verify they're set as expected
+      console.log(`Rating filter: ${ratingFilter}, Distance filter: ${distanceFilter}, Price filter: ${priceFilter}`);
+
+      // Get User Location
+      const position = await getCurrentPosition();
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+
+      const maxDistance = distanceFilter;
+
+      const params = new URLSearchParams({
+          ll: `${latitude},${longitude}`,
+          radius: maxDistance,
+          categories: '13003,13065', // Venue, event space categories
+          sort: 'RATING',
+          limit: 10
+      });
+
+      const response = await fetch(`${FOURSQUARE_BASE_URL}/places/search?${params}`, {
+          headers: {
+              'Authorization': FOURSQUARE_API_KEY,
+              'Accept': 'application/json'
+          }
+      });
+
+      const data = await response.json();
+
+      if (!data.results || !Array.isArray(data.results)) {
+          throw new Error("Invalid API response format.");
+      }
+
+      // Fetch Venue Details for Each Venue
+      const venueDetailsPromises = data.results.map(async (venue) => {
+          try {
+              const detailsResponse = await fetch(`${FOURSQUARE_BASE_URL}/places/${venue.fsq_id}?fields=rating,price`, {
+                  headers: {
+                      'Authorization': FOURSQUARE_API_KEY,
+                      'Accept': 'application/json'
+                  }
+              });
+
+              const details = await detailsResponse.json();
+              
+              return {
+                  ...venue,
+                  rating: details.rating !== undefined ? details.rating : null,
+                  price: details.price !== undefined ? details.price : null
+              };
+          } catch (error) {
+              console.error(`Error fetching details for venue ${venue.fsq_id}:`, error);
+              return venue;
+          }
+      });
+
+      state.venues = await Promise.all(venueDetailsPromises);
+
+      // Log raw venue data (for debugging)
+      console.log("Raw venues data:", state.venues);
+
+      // Apply filters to the venues
+      const filteredVenues = state.venues.filter((venue) => {
+          const ratingValid = venue.rating >= ratingFilter;
+          const priceValid = priceFilter ? venue.price === priceFilter : true;
+          const distanceValid = venue.distance <= distanceFilter;
+
+          // Log each venue's filter validation for debugging
+          console.log(`Venue ${venue.fsq_id} rating: ${venue.rating}, price: ${venue.price}, distance: ${venue.distance}`);
+          console.log(`Rating valid: ${ratingValid}, Price valid: ${priceValid}, Distance valid: ${distanceValid}`);
+
+          return ratingValid && priceValid && distanceValid;
+      });
+
+      // Log the filtered venues
+      console.log("Filtered venues:", filteredVenues);
+
+      // Simplify the sorting logic first to focus on rating only
+      filteredVenues.sort((a, b) => {
+          const ratingA = a.rating !== null && a.rating !== undefined ? parseFloat(a.rating) : 0;
+          const ratingB = b.rating !== null && b.rating !== undefined ? parseFloat(b.rating) : 0;
+
+          console.log(`Sorting ratings: ${ratingA} vs ${ratingB}`);  // Log the ratings comparison
+
+          return ratingB - ratingA;  // Sort by rating (descending)
+      });
+
+      // Log the sorted venues to ensure proper sorting
+      console.log("Sorted venues:", filteredVenues);
+
+      // Render the filtered and sorted venues
+      renderVenues(filteredVenues);
+
+  } catch (error) {
+      console.error('Error searching venues:', error);
+      showNotification('Error searching venues. Please try again.', 'error');
+  }
+}
+
+
+// Render the venues to the page
+// Render the filtered venues to the page
+function renderVenues(venues) {
+  const list = document.getElementById('venuesList');
+  if (!list) return;
+
+  if (venues.length === 0) {
+      list.innerHTML = '<p>No venues found matching the filters.</p>';
+  } else {
+      list.innerHTML = venues.map(venue => {
+          const imageUrl = venue.photos?.[0]
+              ? `${venue.photos[0].prefix}original${venue.photos[0].suffix}`
+              : 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?auto=format&fit=crop&q=80';
+
+          const rawRating = typeof venue.rating === 'number' ? venue.rating : null;
+          const convertedRating = rawRating !== null ? (rawRating / 2).toFixed(1) : 'N/A';
+
+          const stars = rawRating !== null ? '★'.repeat(Math.round(rawRating / 2)) : 'No rating';
+          const price = venue.price ? '$'.repeat(venue.price) : 'Unknown';
+
+          return `
+              <div class="venue-card ${venue.fsq_id === state.event.venue?.fsq_id ? 'selected' : ''}"
+              onclick="selectVenue('${venue.fsq_id}')">
+
+                  <img src="${imageUrl}" alt="${venue.name}" class="venue-image">
+                  <div class="venue-info">
+                      <h3 class="venue-name">${venue.name}</h3>
+                      <p class="venue-address">${venue.location.formatted_address || 'Address not available'}</p>
+                      <div class="venue-rating">
+                          <span class="stars">${stars}</span>
+                          <span class="rating-number">${convertedRating} / 5</span>
+                          <span class="price-level">${price}</span>
+                      </div>
+                  </div>
+              </div>
+          `;
+      }).join('');
+  }
+}
+
+
+// Select a venue from the list
+function selectVenue(fsqId) {
+  const selectedVenue = state.venues.find(venue => venue.fsq_id === fsqId);
+  if (selectedVenue) {
+      state.event.venue = selectedVenue;
+      renderVenues(state.venues);
+}
+}
+// Make searchVenues globally accessible for external scripts
+window.searchVenues = searchVenues;
+
+// Optionally add a gisLoaded callback function for when the Google Maps API loads
+function gisLoaded() {
+  console.log("Google Maps API loaded successfully!");
+  searchVenues(); // Call the searchVenues function once the API is loaded
+}
+function getCurrentPosition() {
+  return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+          reject(new Error("Geolocation is not supported by this browser."));
+          return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+          (position) => resolve(position),
+          (error) => reject(new Error("Error retrieving location: " + error.message))
+      );
+  });
+}
+// Google Calendar API Configuration
+const GOOGLE_CLIENT_ID = '486635642141-jvn5o191ua23vj8arf16ms6hkjddcit8.apps.googleusercontent.com'; // Replace with actual client ID
+const GOOGLE_API_KEY = 'AIzaSyDMmN5TG0hagBdemDfnlr70QDDjVwgclPI'; // Replace with actual API key
+const GOOGLE_DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
+const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/calendar';
+
+// Initialize variables
+let gapiInited = false;
+let gisInited = false;
+
+// Load the GAPI client and auth2 client when the page is ready
+function gapiLoaded() {
+    console.log("gapiLoaded called");
+    gapi.load('client:auth2', initializeGapiClient);
+}
+
+// Initialize the GAPI client
+async function initializeGapiClient() {
+    try {
+        // Initialize the Google API client with the API key and discovery docs
+        await gapi.client.init({
+            apiKey: GOOGLE_API_KEY,
+            discoveryDocs: [GOOGLE_DISCOVERY_DOC],
+        });
+        gapiInited = true;
+        console.log('gapi client initialized');
+
+        // Initialize OAuth2 client for authentication
+        await gapi.auth2.init({
+            client_id: GOOGLE_CLIENT_ID,
+        });
+
+        gisInited = true;
+        console.log('OAuth client initialized');
+        maybeEnableButtons();
+    } catch (error) {
+        console.error("Error initializing Google API client:", error);
+    }
+}
+
+// Function to enable the "Add Event" button once API is ready
+function maybeEnableButtons() {
+    if (gapiInited && gisInited) {
+        document.getElementById("authorize_button").disabled = false;
+    }
+}
+
+// Function to create a Google Calendar event
+async function createCalendarEvent() {
+    const eventTitle = document.getElementById('eventTitle').value;
+    const eventDate = document.getElementById('eventDate').value;
+    const eventTime = document.getElementById('eventTime').value;
+    const eventDescription = document.getElementById('eventDescription').value;
+
+    // Validate inputs
+    if (!eventTitle || !eventDate || !eventTime) {
+        alert('Please fill in all the fields.');
+        return;
+    }
+
+    // Ensure user is authenticated before creating an event
+    const authInstance = gapi.auth2.getAuthInstance();
+    if (!authInstance.isSignedIn.get()) {
+        try {
+            console.log('Not signed in. Signing in...');
+            await authInstance.signIn();
+            console.log('User signed in.');
+        } catch (error) {
+            console.error("Error signing in:", error);
+            alert('Failed to sign in. Please try again.');
+            return;
+        }
+    }
+
+    // Prepare event data
+    const startTime = `${eventDate}T${eventTime}:00`;
+    const endTime = `${eventDate}T${parseInt(eventTime.split(':')[0]) + 1}:${eventTime.split(':')[1]}:00`;
+
+    const event = {
+        summary: eventTitle,
+        description: eventDescription,
+        start: {
+            dateTime: startTime,
+            timeZone: 'America/Los_Angeles',
+        },
+        end: {
+            dateTime: endTime,
+            timeZone: 'America/Los_Angeles',
+        },
+    };
+
+    // Insert the event into the Google Calendar
+    try {
+        const response = await gapi.client.calendar.events.insert({
+            calendarId: 'primary',
+            resource: event,
+        });
+
+        console.log('Event created:', response.result.htmlLink);
+        alert('Event successfully created!');
+    } catch (error) {
+        console.error('Error creating event:', error);
+        alert('Error creating event: ' + (error.message || 'Unknown error'));
+    }
+}
+
+// Event listener to trigger the event creation
+document.getElementById("create_event_button").addEventListener("click", createCalendarEvent);
+
+// Initializing the Google API when the page is loaded
+window.onload = gapiLoaded;
