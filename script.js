@@ -161,9 +161,7 @@ let state = {
         `;
     }).join('');
 
-    itineraryContainer.innerHTML = itineraryHTML;
-}
-// Make sure to load the Google API client library first before this function runs.
+    itineraryContainer.innerHTML = itineraryHTML;}  
 function handleAuthClick() {
   const authInstance = gapi.auth2.getAuthInstance();
   
@@ -206,9 +204,9 @@ function gapiLoaded() {
 function initClient() {
   gapi.client.init({
       apiKey: 'AIzaSyDMmN5TG0hagBdemDfnlr70QDDjVwgclPI', // Replace with your actual API key
-      clientId: '486635642141-jvn5o191ua23vj8arf16ms6hkjddcit8.apps.googleusercontent.com', // Replace with your actual Client ID
+      clientId: '854853523589-vji17u3on8aqchmhngd18shnuhjia333.apps.googleusercontent.com', // Replace with your actual Client ID
       discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
-      scope: 'https://www.googleapis.com/auth/calendar.readonly',
+      scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events',
   }).then(function () {
       console.log('Google API client initialized');
       
@@ -454,10 +452,10 @@ function getCurrentPosition() {
   });
 }
 // Google Calendar API Configuration
-const GOOGLE_CLIENT_ID = '486635642141-jvn5o191ua23vj8arf16ms6hkjddcit8.apps.googleusercontent.com'; // Replace with actual client ID
-const GOOGLE_API_KEY = 'AIzaSyDMmN5TG0hagBdemDfnlr70QDDjVwgclPI'; // Replace with actual API key
+const GOOGLE_CLIENT_ID = '854853523589-vji17u3on8aqchmhngd18shnuhjia333.apps.googleusercontent.com'; // Replace with actual client ID
+const GOOGLE_API_KEY = 'AIzaSyA525osxMqhdO9EWW5kcrQslZ8uw0ZQ3uA'; // Replace with actual API key
 const GOOGLE_DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
-const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/calendar';
+const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events';
 
 // Initialize variables
 let gapiInited = false;
@@ -564,3 +562,17 @@ document.getElementById("create_event_button").addEventListener("click", createC
 
 // Initializing the Google API when the page is loaded
 window.onload = gapiLoaded;
+function signIn() {
+  gapi.auth2.getAuthInstance().signIn().then(function () {
+      // You can now make API calls
+      console.log("Successfully signed in");
+  });
+}
+gapi.client.init({
+  apiKey: 'YOUR_API_KEY',
+  clientId: 'YOUR_CLIENT_ID',
+  scope: 'https://www.googleapis.com/auth/calendar',
+  discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest']
+}).then(function () {
+  console.log('Google API client initialized');
+});
