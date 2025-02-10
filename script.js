@@ -1,6 +1,3 @@
-// Main app.js file
-
-// State management
 let state = {
   event: {
     title: "",
@@ -14,12 +11,11 @@ let state = {
   venues: [],
   filters: {
     rating: 0,
-    maxDistance: 10000, // 10km
+    maxDistance: 10000, 
     priceLevel: "",
   },
 };
 
-// Event listeners
 document.getElementById("eventTitle").addEventListener("input", (e) => {
   state.event.title = e.target.value;
 });
@@ -37,7 +33,7 @@ document.getElementById("eventDescription").addEventListener("input", (e) => {
   state.event.description = e.target.value;
 });
 
-// Filter handlers
+
 document.getElementById("ratingFilter").addEventListener("change", (e) => {
   state.filters.rating = parseInt(e.target.value);
   searchVenues();
@@ -53,7 +49,7 @@ document.getElementById("priceFilter").addEventListener("change", (e) => {
   searchVenues();
 });
 
-// Attendee management
+
 function addAttendee() {
   const nameInput = document.getElementById("attendeeName");
   const emailInput = document.getElementById("attendeeEmail");
@@ -142,7 +138,7 @@ function renderAttendees() {
     .join("");
 }
 
-// Utility functions
+
 function showNotification(message, type = "info") {
   const notification = document.createElement("div");
   notification.className = `notification ${type}`;
@@ -163,14 +159,14 @@ function generateItinerary() {
     return;
   }
 
-  // Example: Populate the itinerary with some data
+
   const itinerary = [
     { time: "9:00 AM", activity: "Breakfast" },
     { time: "10:00 AM", activity: "Meeting" },
     { time: "12:00 PM", activity: "Lunch" },
   ];
 
-  // Create HTML for the itinerary
+
   const itineraryHTML = itinerary
     .map((item) => {
       return `
@@ -184,7 +180,6 @@ function generateItinerary() {
   itineraryContainer.innerHTML = itineraryHTML;
 }
 function handleAuthClick() {
-  // Initialize Google API client if it is not initialized yet
   const authInstance = gapi.auth2.getAuthInstance();
 
   if (authInstance) {
@@ -192,7 +187,6 @@ function handleAuthClick() {
       .signIn()
       .then(function (googleUser) {
         console.log("User signed in: ", googleUser);
-        // You can add logic here to fetch and display events after the user is signed in
         fetchCalendarEvents();
       })
       .catch(function (error) {
@@ -203,11 +197,9 @@ function handleAuthClick() {
   }
 }
 
-
-// Example function to fetch events from Google Calendar
 function fetchCalendarEvents() {
   const calendar = gapi.client.calendar.events.list({
-    calendarId: "primary", // or use specific calendar ID
+    calendarId: "primary", 
     timeMin: new Date().toISOString(),
     maxResults: 10,
     singleEvents: true,
@@ -216,24 +208,23 @@ function fetchCalendarEvents() {
 
   calendar.execute(function (response) {
     console.log(response);
-    // Handle the response and display events
   });
 }
 
-// Load the Google API client library and authorize the user
+
 function gapiLoaded() {
   console.log("gapiLoaded called");
   gapi.load("client", initializeGapiClient);
 }
 
 
-// Initialize the Google API client
+
 function initClient() {
   gapi.client
     .init({
-      apiKey: "AIzaSyDMmN5TG0hagBdemDfnlr70QDDjVwgclPI", // Replace with your actual API key
+      apiKey: "AIzaSyDMmN5TG0hagBdemDfnlr70QDDjVwgclPI", 
       clientId:
-        "854853523589-vji17u3on8aqchmhngd18shnuhjia333.apps.googleusercontent.com", // Replace with your actual Client ID
+        "854853523589-vji17u3on8aqchmhngd18shnuhjia333.apps.googleusercontent.com", 
       discoveryDocs: [
         "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest",
       ],
@@ -243,7 +234,6 @@ function initClient() {
     .then(function () {
       console.log("Google API client initialized");
 
-      // Make sure we can now access the auth instance
       const authInstance = gapi.auth2.getAuthInstance();
       if (authInstance.isSignedIn.get()) {
         console.log("User is already signed in");
@@ -256,17 +246,14 @@ function initClient() {
     });
 }
 
-// This function can be used to handle the Google Identity Services API if needed
+
 function gisLoaded() {
   console.log("Google Identity Services API loaded");
 }
-// venues.js
-
-// Foursquare API Configuration
-const FOURSQUARE_API_KEY = "fsq3iQJuwQqIJYLMqpTXfSl6EFqgNRs/T8ikN3M1pxywXX0="; // Replace with actual API key
+const FOURSQUARE_API_KEY = "fsq3iQJuwQqIJYLMqpTXfSl6EFqgNRs/T8ikN3M1pxywXX0="; 
 const FOURSQUARE_BASE_URL = "https://api.foursquare.com/v3";
 
-// Venue search with Foursquare API
+
 async function getCurrentPosition() {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
@@ -281,19 +268,14 @@ async function getCurrentPosition() {
     );
   });
 }
-
-// Venue search with Foursquare API
 async function searchVenues() {
   try {
-    // Get Filter Values from the UI
     const { ratingFilter, distanceFilter, priceFilter } = getFilterValues();
 
-    // Log filter values to verify they're set as expected
     console.log(
       `Rating filter: ${ratingFilter}, Distance filter: ${distanceFilter}, Price filter: ${priceFilter}`
     );
 
-    // Get User Location
     const position = await getCurrentPosition();
     const latitude = position.coords.latitude;
     const longitude = position.coords.longitude;
@@ -303,7 +285,7 @@ async function searchVenues() {
     const params = new URLSearchParams({
       ll: `${latitude},${longitude}`,
       radius: maxDistance,
-      categories: "13003,13065", // Venue, event space categories
+      categories: "13003,13065", 
       sort: "RATING",
       limit: 10,
     });
@@ -324,7 +306,7 @@ async function searchVenues() {
       throw new Error("Invalid API response format.");
     }
 
-    // Fetch Venue Details for Each Venue
+
     const venueDetailsPromises = data.results.map(async (venue) => {
       try {
         const detailsResponse = await fetch(
@@ -355,16 +337,14 @@ async function searchVenues() {
 
     state.venues = await Promise.all(venueDetailsPromises);
 
-    // Log raw venue data (for debugging)
+    
     console.log("Raw venues data:", state.venues);
 
-    // Apply filters to the venues
     const filteredVenues = state.venues.filter((venue) => {
       const ratingValid = venue.rating >= ratingFilter;
       const priceValid = priceFilter ? venue.price === priceFilter : true;
       const distanceValid = venue.distance <= distanceFilter;
 
-      // Log each venue's filter validation for debugging
       console.log(
         `Venue ${venue.fsq_id} rating: ${venue.rating}, price: ${venue.price}, distance: ${venue.distance}`
       );
@@ -375,25 +355,21 @@ async function searchVenues() {
       return ratingValid && priceValid && distanceValid;
     });
 
-    // Log the filtered venues
     console.log("Filtered venues:", filteredVenues);
 
-    // Simplify the sorting logic first to focus on rating only
     filteredVenues.sort((a, b) => {
       const ratingA =
         a.rating !== null && a.rating !== undefined ? parseFloat(a.rating) : 0;
       const ratingB =
         b.rating !== null && b.rating !== undefined ? parseFloat(b.rating) : 0;
 
-      console.log(`Sorting ratings: ${ratingA} vs ${ratingB}`); // Log the ratings comparison
+      console.log(`Sorting ratings: ${ratingA} vs ${ratingB}`); 
 
-      return ratingB - ratingA; // Sort by rating (descending)
+      return ratingB - ratingA; 
     });
 
-    // Log the sorted venues to ensure proper sorting
     console.log("Sorted venues:", filteredVenues);
 
-    // Render the filtered and sorted venues
     renderVenues(filteredVenues);
   } catch (error) {
     console.error("Error searching venues:", error);
@@ -401,8 +377,6 @@ async function searchVenues() {
   }
 }
 
-// Render the venues to the page
-// Render the filtered venues to the page
 function renderVenues(venues) {
   const list = document.getElementById("venuesList");
   if (!list) return;
@@ -455,18 +429,14 @@ function renderVenues(venues) {
   }
 }
 
-// Make searchVenues globally accessible for external scripts
+
 window.searchVenues = searchVenues;
 
-// Optionally add a gisLoaded callback function for when the Google Maps API loads
+
 function gisLoaded() {
   console.log("Google Maps API loaded successfully!");
-  searchVenues(); // Call the searchVenues function once the API is loaded
+  searchVenues(); 
 }
-// venues.js
-
-// Function to get selected filter values
-// Function to get selected filter values
 function getFilterValues() {
   const ratingFilter = parseFloat(
     document.getElementById("ratingFilter").value
@@ -477,7 +447,7 @@ function getFilterValues() {
   const priceFilter =
     parseInt(document.getElementById("priceFilter").value) || null;
 
-  // Log the filter values to verify
+
   console.log(
     `Rating: ${ratingFilter}, Distance: ${distanceFilter}, Price: ${priceFilter}`
   );
@@ -489,7 +459,7 @@ function getFilterValues() {
   };
 }
 
-// Select a venue from the list
+
 function selectVenue(fsqId) {
   const selectedVenue = state.venues.find((venue) => venue.fsq_id === fsqId);
   if (selectedVenue) {
@@ -497,13 +467,13 @@ function selectVenue(fsqId) {
     renderVenues(state.venues);
   }
 }
-// Make searchVenues globally accessible for external scripts
+
 window.searchVenues = searchVenues;
 
-// Optionally add a gisLoaded callback function for when the Google Maps API loads
+
 function gisLoaded() {
   console.log("Google Maps API loaded successfully!");
-  searchVenues(); // Call the searchVenues function once the API is loaded
+  searchVenues(); 
 }
 function getCurrentPosition() {
   return new Promise((resolve, reject) => {
@@ -519,57 +489,46 @@ function getCurrentPosition() {
     );
   });
 }
-// Google Calendar API Configuration
+
 const GOOGLE_CLIENT_ID =
-  "363006308564-u052flq27gjh811qpht9mumvplo6cta3.apps.googleusercontent.com"; // Replace with actual client ID
-const GOOGLE_API_KEY = "AIzaSyAXLCmkqgKQQZBRxUJ1C7DWMSENgrykaWc"; // Replace with actual API key
+  "363006308564-u052flq27gjh811qpht9mumvplo6cta3.apps.googleusercontent.com"; 
+const GOOGLE_API_KEY = "AIzaSyAXLCmkqgKQQZBRxUJ1C7DWMSENgrykaWc"; 
 const GOOGLE_DISCOVERY_DOC =
   "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
 const GOOGLE_SCOPES =
   "https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events";
 
-// Initialize variables
 let gapiInited = false;
 let gisInited = false;
-
-// Load the GAPI client and auth2 client when the page is ready
-// Main app.js file
-// State management and event handling as you already have
-
-// Function to initialize the Google API client and OAuth2
 function gapiLoaded() {
   console.log("gapiLoaded called");
   gapi.load("client:auth2", initializeGapiClient);
 }
 
-// Initialize the Google API client
 async function initializeGapiClient() {
   try {
     await gapi.client.init({
-      apiKey: GOOGLE_API_KEY,  // Your API key
-      clientId: GOOGLE_CLIENT_ID,  // Your Client ID
-      discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],  // Discovery docs for Calendar API
-      scope: "https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events",  // Required scopes
+      apiKey: GOOGLE_API_KEY,  
+      clientId: GOOGLE_CLIENT_ID,  
+      discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],  
+      scope: "https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events",  
     });
 
     console.log("Google API client initialized");
 
-    // Initialize the authentication instance
     await gapi.auth2.init({
-      client_id: GOOGLE_CLIENT_ID,  // Your Client ID
+      client_id: GOOGLE_CLIENT_ID,  
     });
 
     console.log("OAuth client initialized");
 
-    maybeEnableButtons();  // Enable buttons after initialization
+    maybeEnableButtons();  
 
   } catch (error) {
     console.error("Error initializing Google API client:", error);
   }
 }
 
-
-// Function to enable the "Create Event" button once API is ready
 function maybeEnableButtons() {
   if (gapiInited && gisInited) {
     document.getElementById("authorize_button").disabled = false;
@@ -577,8 +536,6 @@ function maybeEnableButtons() {
   }
 }
 
-
-// OAuth sign-in click
 async function handleAuthClick() {
   try {
     const tokenResponse = await google.accounts.oauth2.initTokenClient({
@@ -586,7 +543,7 @@ async function handleAuthClick() {
       scope: GOOGLE_SCOPES,
       callback: (response) => {
         if (response.access_token) {
-          gapi.client.setToken({ access_token: response.access_token }); // Set token correctly
+          gapi.client.setToken({ access_token: response.access_token }); 
           fetchCalendarEvents(); 
         } else {
           console.error("Failed to get access token.");
@@ -599,8 +556,6 @@ async function handleAuthClick() {
   }
 }
 
-
-// Create Google Calendar event
 async function createCalendarEvent() {
   const eventTitle = document.getElementById("eventTitle").value;
   const eventDate = document.getElementById("eventDate").value;
@@ -637,12 +592,8 @@ async function createCalendarEvent() {
 }
 
 
-// Event listeners
 document
   .getElementById("create_event_button")
   .addEventListener("click", createCalendarEvent);
 
-// Trigger Google API client initialization
 window.onload = gapiLoaded;
-
-// Ensure you're using the correct callback URL for OAuth2 in the Google Cloud Console
