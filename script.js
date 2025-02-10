@@ -522,7 +522,7 @@ function getCurrentPosition() {
 // Google Calendar API Configuration
 const GOOGLE_CLIENT_ID =
   "363006308564-u052flq27gjh811qpht9mumvplo6cta3.apps.googleusercontent.com"; // Replace with actual client ID
-const GOOGLE_API_KEY = "AIzaSyA525osxMqhdO9EWW5kcrQslZ8uw0ZQ3uA"; // Replace with actual API key
+const GOOGLE_API_KEY = "AIzaSyAXLCmkqgKQQZBRxUJ1C7DWMSENgrykaWc"; // Replace with actual API key
 const GOOGLE_DISCOVERY_DOC =
   "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
 const GOOGLE_SCOPES =
@@ -585,14 +585,15 @@ async function handleAuthClick() {
       client_id: GOOGLE_CLIENT_ID,
       scope: GOOGLE_SCOPES,
       callback: (response) => {
-        console.log("Token Response:", response);
         if (response.access_token) {
-          fetchCalendarEvents(); // Fetch events after successful authentication
+          gapi.client.setToken({ access_token: response.access_token }); // Set token correctly
+          fetchCalendarEvents(); 
         } else {
           console.error("Failed to get access token.");
         }
       },
     }).requestAccessToken();
+    
   } catch (error) {
     console.error("Error signing in:", error);
   }
